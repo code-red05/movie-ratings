@@ -1,0 +1,347 @@
+<% include partials/header %>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<style>
+	input[type=text], input[type=number], input[type=email], input[type=date], textarea, select {
+	  padding: 8px 10px;
+	  margin: 8px 0;
+	  display: inline-block;
+	  border: 1px solid #ccc;
+	  border-radius: 4px;
+	  box-sizing: border-box;
+	}
+
+	input[type=submit], button[type=button] {
+		background-color: rgb(0,123,255);
+		color: white;
+		padding: 8px 20px;
+		margin: 8px 0;
+		border: none;
+		border-radius: 4px;
+		cursor: pointer;
+		transition: 0.5s;
+		background-image: linear-gradient(to bottom right, rgb(0,0,0,0), rgb(58,175,169));
+	}
+
+	input[type=submit]:hover, button[type=button]:hover{
+		background-color: #2b7a78;
+	}
+
+	#searchMovie input[type=submit]{
+		border: solid #2b7a78 1px
+	}
+	
+	.results{
+		border-collapse: collapse;
+		width: 100%;
+	}
+
+	.results tr:nth-child(odd){
+		background: #ffffff;
+		/*background: white;*/
+	}
+
+	.results tr:nth-child(even){
+		/*background: #f2f2f2;*/
+		background: #e9f6ff;
+	}
+
+	.results td{
+		height: 250px;
+		padding: 10px;
+	}
+
+	.results p{
+		margin: 10px 0px;
+	}
+
+	.results a:hover{
+		text-decoration: none;
+	}
+
+	.modal {
+	display: none; /* Hidden by default */
+	position: fixed; /* Stay in place */
+	z-index: 1; /* Sit on top */
+	padding-top: 100px; /* Location of the box */
+	left: 0;
+	top: 0;
+	width: 100%; /* Full width */
+	height: 100%; /* Full height */
+	overflow: auto; /* Enable scroll if needed */
+	background-color: rgb(0,0,0); /* Fallback color */
+	background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+	}
+
+	.modal a:hover{
+		text-decoration: none;
+	}
+
+	/* Modal Content */
+	.modal-content {
+	position: relative;
+	background-color: #fefefe;
+	margin: auto;
+	padding: 0;
+	border: 1px solid #888;
+	width: 90%;
+	height: 90%;
+	box-shadow: 0px 0px 40px rgb(22, 22, 22);
+	-webkit-animation-name: animatetop;
+	-webkit-animation-duration: 0.4s;
+	animation-name: animatetop;
+	animation-duration: 0.4s
+	}
+
+	/* Add Animation */
+	@-webkit-keyframes animatetop {
+	from {top:-300px; opacity:0} 
+	to {top:0; opacity:1}
+	}
+
+	@keyframes animatetop {
+	from {top:-300px; opacity:0}
+	to {top:0; opacity:1}
+	}
+
+	/* The Close Button */
+	.close {
+	color: white;
+	float: right;
+	font-size: 28px;
+	font-weight: bold;
+	transition: 0.5s;
+	}
+
+	.close:hover,
+	.close:focus {
+	color: white;
+	text-decoration: none;
+	cursor: pointer;
+	}
+
+	.modal-header {
+	padding: 5px 16px;
+	height: 8%;
+	vertical-align: middle;
+	color: white;
+	background-color: black;
+	background-image: linear-gradient(to right,  rgb(0,123,255, 0.5), rgb(58,175,169,1),  rgb(0,123,255, 0.5));
+	}
+
+	.modal-body {
+		padding: 10px 10px;
+		line-height: normal;
+	}
+
+	.modal-body td{
+		border: none;
+	}
+
+	.modal-body p{
+		margin: 10px 0px;
+	}
+
+	.modal-footer {
+	padding: 2px 16px;
+	background-color: #5cb85c;
+	color: white;
+	}
+
+	#nav{
+		height: 20px;
+		margin-top: 20px;
+		text-align: center;
+		vertical-align: middle;
+		display: inline-table;
+		border-spacing: 10px;
+	}
+
+	#nav a{
+	display: table-cell;
+	border: solid;
+	border-radius: 50%;
+	width: 40px;
+	height: 40px;
+	text-align: center;
+	vertical-align: middle;
+	background-color: white;
+	cursor: pointer;
+	transition: 0.5s;
+	border-color: rgb(0,123,255);
+	color: rgb(0,123,255);
+	}
+
+	#nav a:hover{
+		background-color: rgb(0,86,179);
+		border-color: rgb(0,86,179);
+		text-decoration: none;
+		color: white;
+	}
+
+
+	#nav a.active{
+		background-color: rgb(0,123,255);
+		border-color: rgb(0,123,255);
+		border-width: 2px;
+		color: white;
+	}
+
+	#nav a.active:hover{
+		background-color: rgb(0,86,179);
+		border-color: rgb(0,86,179);
+		text-decoration: none;
+	}
+
+</style>
+<script>
+	function openModal(e){
+		axios.get('https://www.omdbapi.com/?i=' + e.value + '&apikey=3047954a').then(function(response) {
+		var movie = response.data;
+		var type = movie['Type'];
+		var t = type[0].toUpperCase() + type.slice(1);
+		var imdb_url = 'https://www.imdb.com/title/' + movie['imdbID'];
+		document.getElementById('modalBody').innerHTML = '<table style="width: 100%; height: 90%;">'+
+			'<tr>'+
+				'<td style="text-align: center; width: 25%; height: 100%; padding: 1%"><img src="' + movie['Poster'] + '" alt="Image Not Available" style="max-height:100%; max-width: 100%;"></td>'+
+				'<td style="vertical-align: text-top;"><div style="height: 100%; width: 70%; padding: 0% 2.5%; border: none; float: left;">'+
+						'<div style="width: 100%; height: 20%; border:none; display: inline-block">'+	
+						'<p style="font-size: xx-large; margin: 0">' + movie['Title'] + '</p>'+
+						'</div>'+
+						'<p>Rated: ' + movie['Rated'] + '</p>'+
+						'<p>Released: ' + movie['Released'] + '</p>'+
+						'<p>Runtime: ' + movie['Runtime'] + '</p>'+
+						'<p>Genre: ' + movie['Genre'] + '</p>'+
+						'<p>Language: ' + movie['Language'] + '</p>'+
+						'<p>Director: ' + movie['Director'] + '</p>'+
+						'<div style="display: inline-block; margin: 0px 0px 5px 0px;"><table><tr><td style="vertical-align: text-top;">Cast:&nbsp;</td><td>' + movie['Actors'] + '</td></tr></table></div>'+
+						'<div style="display: inline-block; margin: 0px 0px 10px 0px;"><table><tr><td style="vertical-align: text-top;">Plot:&nbsp;</td><td>' + movie['Plot'] + '</td></tr></table></div>'+
+						//'<p>Type: ' + t + '</p>'+
+						'<p><a href="' + imdb_url + '" target="_blank">View ' + t + ' on <img src="imdb.png"></a></p>'+
+				'</div>'+
+				'<div id="right-modal" style="width: 30%; height: 100%; float: right; border: none; padding: 1% 0% 0% 1%">'+
+					'<p style="font-size: x-large; margin: 0px">Ratings</p>'+
+					'<div id="rating"><p>IMDb rating:  <font style="font-size: large">&nbsp;<img src="star.png">&nbsp;' + movie['imdbRating'] + '</font><font style="font-size: small">/10</font></p></div>'+
+					'<p>Metascore:  <font style="font-size: large">' + movie['Metascore'] + '</font><font style="font-size: small">/100</font></p>'+
+					'<br>' +
+					'<p style="font-size: x-large; margin: 0px">Awards</p>'+
+					'<p>' + movie['Awards'] + '</p>' + 
+					'<br>' +
+					'<p style="font-size: x-large; margin: 0px">More</p>'+
+					'<p>Country: ' + movie['Country'] + '</p>' +
+				'</div>'+
+				'</td>'+
+				'</tr></table>';
+		if(movie['Ratings'].length>=2){
+			document.getElementById('rating').innerHTML += 
+				'<p>Rotten Tomatoes:  <font style="font-size: large">' + movie['Ratings'][1]['Value'] + '</font>&nbsp;<img src="tomato.png"></p>';
+		}
+		if(movie['Type']=="movie"){
+			document.getElementById('right-modal').innerHTML += '<p>Production: ' + movie['Production'] + '</p>';
+		}
+		if(movie['Type']=="series"){
+			document.getElementById('right-modal').innerHTML += '<p>Total Seasons: ' + movie['totalSeasons'] + '</p>';
+		}
+		document.getElementById("myModal").style.display = "block";
+		});
+	}
+
+</script>
+<title>Results Page</title>
+</head>
+<body>
+	<div id="searchMovie" style="margin: auto; text-align: center; width: 100%; padding-top: 0.5%; padding-bottom: 0.5%; position: fixed; box-shadow: 0px 1px 20px #888888; background-color: black; background-image: linear-gradient(to right,  rgb(0,123,255, 0.6), rgb(58,175,169,1),  rgb(0,123,255, 0.6));">		
+		<form action="/results" method="get">
+			<table style="margin-left: 2%;">
+				<tr>
+					<td style="padding: 10px; font-size: larger; width: 20%; color: white; font-weight: 500;">Search For a Movie: </td>
+					<td style="width :60%"><input type="text" name="search" placeholder="Enter Movie Title...." style="width: 90%;"></td>
+					<td style="width: 10%"><input type="submit"></td>
+				</tr>
+			</table>
+		</form>
+	</div>
+	<br>
+	<div style="margin: auto; width:64%; margin-top: 5%; padding: 2%; border-radius: 10px; background-color: #f2f2f2">
+	<% if(gotResponse == 'True'){ %>
+	<h4>Results for "<%= query %>"</h4>
+	<br>
+	<table class="results" id="data">
+	  <% data.forEach(function(movie){ %>
+	  <tr style="border: thin solid; border-color: #d1d1d1;">
+		<% var imdb_url = 'https://www.imdb.com/title/' + movie['imdbID'] %>
+		<% var type = movie['Type'] %>
+		<td style="width: 23%;text-align: center;"><img src="<%= movie['Poster'] %>" alt=" Image Not Available" style="max-height: 90%; max-width: 90%;"></td>
+		<td style="width: 59%; vertical-align: text-top;"><div style="height: 100%;">
+			<div style="width: 100%; height: 50%; border: none;">
+			<font style="font-size: 150%;"><%= movie['Title'] %></font>
+			</div>
+			<p>Year: <%= movie['Year'] %></p>
+			<p>Type: <%= type[0].toUpperCase() + type.slice(1) %></p>
+			<p><a href="<%= imdb_url %>" target="_blank">View on <img src="imdb.png"></a></p>
+		</div></td>
+	    <td style="width: 18%;"><button type="button" value="<%= movie['imdbID'] %>" onclick="openModal(this)">View Details</button></td>
+	  </tr>
+	  <% }) %>
+	</table>
+	<% } %>
+	<% if(gotResponse == 'False'){ %>
+	<h4>No Results for "<%= query %>"</h4>
+	<br>
+	<% } %>
+	<div id="box"></div>
+</div>
+<div id="myModal" class="modal">
+
+	<!-- Modal content -->
+	<div class="modal-content">
+	  <div class="modal-header">
+		<p style="font-size: large;">Ratings and Description</p>
+		<span class="close">&times;</span>
+	  </div>
+	  <div class="modal-body" id="modalBody">
+	  </div>
+	  <div class="modal-footer" style="display: none;">
+		<h6>Modal Footer</h6>
+	  </div>
+	</div>
+  
+</div>
+<br>
+<script>
+	var modal = document.getElementById("myModal");
+	var span = document.getElementsByClassName("close")[0];
+	span.onclick = function() {
+		modal.style.display = "none";
+	}
+	window.onclick = function(event) {
+		if (event.target == modal) {
+			modal.style.display = "none";
+		}
+	}
+</script>
+<script>
+	$(window).on("load",function(){
+		$('#data').after('<center><div id="nav"></div></center>');
+		var rowsShown = 8;
+		var rowsTotal = $('#data tbody tr').length;
+		var numPages = rowsTotal/rowsShown;
+		for(i = 0;i < numPages;i++) {
+			var pageNum = i + 1;
+			$('#nav').append('<a href="#" rel="'+i+'">'+pageNum+'</a> ');
+		}
+		$('#data tr').hide();
+		$('#data tr').slice(0, rowsShown).show();
+		$('#nav a:first').addClass('active');
+		$('#nav a').bind('click', function(){
+			$('#nav a').removeClass('active');
+			$(this).addClass('active');
+			var currPage = $(this).attr('rel');
+			var startItem = currPage * rowsShown;
+			var endItem = startItem + rowsShown;
+			$('#data tr').css('opacity','0.0').hide().slice(startItem, endItem).css('display','table-row').animate({opacity:1}, 300);
+		});
+	});
+</script>
+</body>
+</html>
